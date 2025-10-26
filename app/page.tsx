@@ -1,16 +1,21 @@
 import { HeaderImage } from "@super-portfolio/portfolio-component-lib";
 import headerBg from './header-bg.png';
-import Image from 'next/image';
+import { HighResImage } from './components/HighResImage';
+import { HighResImageServerProvider } from './components/HighResImage/HighResImageServerProvider';
+
+const headerBgPath = './app/header-bg.png';
+
 export default function Home() {
   return (
-    <>
+    <HighResImageServerProvider imagePath={headerBgPath}>
       <HeaderImage
-        imageSrc={headerBg.src}
-        ImageOverride={Image}
+        asset="header-bg.png"
+        ImageOverride={HighResImage}
         width={3440}
-        height={4880}
-        alt="Header background"
+        height={2880}
+        lowQuality={75}
+        highQuality={100}
       />
-    </>
+    </HighResImageServerProvider>
   );
 }

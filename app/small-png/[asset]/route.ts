@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSmallerPng } from '@/app/utilities/getSmallerPng';
+import { z } from 'zod';
+
+const supportedAssets: Record<string, {
+  path: string;
+  dimensions: {
+    [P in (typeof supportedQualities)[number]]: {
+      width: number;
+      height: number;
+    };
+  };
+}> = {
+  'header-bg.png': {
+    path: './app/header-bg.png',
+    dimensions: {
+      10: { width: 16, height: 16 },
+      75: { width: 344, height: 288 },
+      100: { width: 3440, height: 2880 }
+    },
+  },
+};
+
+const supportedQualities = [10, 75, 100] as const;
+
+const cacheImages = async () => {
+  const cachedImages = new Map<string, Map<number, Uint8Array>>();
+  for (const asset in supportedAssets) {
+    for (const quality of supportedQualities) {
+      const dimensions = supportedAssets[asset].dimensions[quality];
+      const smaller = await getSmallerPng(supportedAssets[asset].path, quality, dimensions.width, dimensions.height);
+      cachedImages.set(asset, new Map<number, Uint8Array>([...cachedImages.get(asset) ?? [], [quality, new Uint8Array(smaller)]]));
+    }
+  }
+  return cachedImages;
+};
+
+const cachedImages = cacheImages();
+
+const getCachedImage = async (asset: string, quality: typeof supportedQualities[number]) => {
+  if (!supportedAssets[asset]) {
+    throw new Error('Asset not found');
+  }
+  if (!supportedQualities.includes(quality)) {
+    throw new Error('Quality not supported');
+  }
+  const image = (await cachedImages).get(asset)?.get(quality);
+  if (!image) {
+    throw new Error('Image not found');
+  }
+  return image;
+};
+
+export const GET = async (req: NextRequest, context: { params: Promise<{ asset: string }> }) => {
+  try {
+    const quality = z.coerce.number().int().min(1).max(100).parse(req.nextUrl.searchParams.get('quality')) as typeof supportedQualities[number];
+    const { asset } = await context.params;
+    const smaller = await getCachedImage(asset, quality);
+    return new NextResponse(new Uint8Array(smaller), { headers: { 'Content-Type': 'image/png' } });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return new NextResponse(error.message, { status: 400 });
+    }
+    switch ((error as Error).message) {
+      case 'Asset not found':
+        return new NextResponse('Asset not found', { status: 404 });
+      case 'Quality not supported':
+        return new NextResponse('Quality not supported', { status: 400 });
+      case 'Image not found':
+        return new NextResponse('Image not found', { status: 404 });
+      default:
+        throw error;
+    }
+  }
+};
