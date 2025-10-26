@@ -46,11 +46,24 @@ export const HighResImage = ({
   const context = useHighResImage();
   const tinyUrl = context?.tinyUrl;
   const [highestLoadedQuality, setHighestLoadedQuality] = useState(0);
+  const lowResImgRef = useRef<HTMLImageElement>(null);
+  const highResImgRef = useRef<HTMLImageElement>(null);
+
+  // Check if the images are already loaded and set the highest loaded quality accordingly
+  useEffect(() => {
+    if (highResImgRef.current && highResImgRef.current.complete) {
+      setHighestLoadedQuality(2);
+      return;
+    }
+    if (lowResImgRef.current && lowResImgRef.current.complete) {
+      setHighestLoadedQuality(currentQuality => currentQuality < 1 ? 1 : currentQuality);
+    }
+  }, []);
 
   return (
     <div style={{ position: 'relative' }}>
       {tinyUrl && <img src={tinyUrl} {...lowImageProps} {...commonProps} />}
-      <img src={getImageUrl(asset, lowQuality)} style={{
+      <img ref={lowResImgRef} src={getImageUrl(asset, lowQuality)} style={{
         position: 'absolute',
         top: 0,
         left: 0,
@@ -59,7 +72,7 @@ export const HighResImage = ({
         opacity: highestLoadedQuality >= 1 ? 1 : 0,
         transition: 'opacity 0.3s ease-in-out',
       }} {...tinyImageProps} {...commonProps} onLoad={() => setHighestLoadedQuality(currentQuality => currentQuality < 1 ? 1 : currentQuality)} />
-      <img src={getImageUrl(asset, highQuality)} style={{
+      <img ref={highResImgRef} src={getImageUrl(asset, highQuality)} style={{
         position: 'absolute',
         top: 0,
         left: 0,
