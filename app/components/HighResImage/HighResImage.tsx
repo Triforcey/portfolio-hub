@@ -47,8 +47,6 @@ export const HighResImage = ({
   const tinyUrl = context?.tinyUrl;
   const [highestLoadedQuality, setHighestLoadedQuality] = useState(0);
 
-  console.log('sources', tinyUrl, getImageUrl(asset, lowQuality), getImageUrl(asset, highQuality));
-
   return (
     <div style={{ position: 'relative' }}>
       {tinyUrl && <img src={tinyUrl} {...lowImageProps} {...commonProps} />}

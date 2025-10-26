@@ -16,12 +16,13 @@ const supportedAssets: Record<string, {
     dimensions: {
       10: { width: 16, height: 16 },
       75: { width: 344, height: 288 },
+      95: { width: 344, height: 288 },
       100: { width: 3440, height: 2880 }
     },
   },
 };
 
-const supportedQualities = [10, 75, 100] as const;
+const supportedQualities = [10, 75, 95, 100] as const;
 
 const cacheImages = async () => {
   const cachedImages = new Map<string, Map<number, Uint8Array>>();

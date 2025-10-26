@@ -1,5 +1,4 @@
 import { HeaderImage } from "@super-portfolio/portfolio-component-lib";
-import headerBg from './header-bg.png';
 import { HighResImage } from './components/HighResImage';
 import { HighResImageServerProvider } from './components/HighResImage/HighResImageServerProvider';
 
@@ -13,7 +12,7 @@ export default function Home() {
         ImageOverride={HighResImage}
         width={3440}
         height={2880}
-        lowQuality={75}
+        lowQuality={95}
         highQuality={100}
       />
     </HighResImageServerProvider>
