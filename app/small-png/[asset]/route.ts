@@ -24,32 +24,31 @@ const supportedAssets: Record<string, {
 
 const supportedQualities = [10, 75, 95, 100] as const;
 
-const cacheImages = async () => {
-  const cachedImages = new Map<string, Map<number, Uint8Array>>();
-  for (const asset in supportedAssets) {
-    for (const quality of supportedQualities) {
-      const dimensions = supportedAssets[asset].dimensions[quality];
-      const smaller = await getSmallerPng(supportedAssets[asset].path, quality, dimensions.width, dimensions.height);
-      cachedImages.set(asset, new Map<number, Uint8Array>([...cachedImages.get(asset) ?? [], [quality, new Uint8Array(smaller)]]));
-    }
-  }
-  return cachedImages;
-};
-
-const cachedImages = cacheImages();
+const imageCache = new Map<string, Map<number, Uint8Array>>();
 
 const getCachedImage = async (asset: string, quality: typeof supportedQualities[number]) => {
   if (!supportedAssets[asset]) {
     throw new Error('Asset not found');
   }
+
   if (!supportedQualities.includes(quality)) {
     throw new Error('Quality not supported');
   }
-  const image = (await cachedImages).get(asset)?.get(quality);
-  if (!image) {
-    throw new Error('Image not found');
+
+  let assetScope = imageCache.get(asset);
+  const image = assetScope?.get(quality);
+  if (image) return image;
+
+  if (!assetScope) {
+    assetScope = new Map<number, Uint8Array>();
+    imageCache.set(asset, assetScope);
   }
-  return image;
+
+  const dimensions = supportedAssets[asset].dimensions[quality];
+  const smaller = await getSmallerPng(supportedAssets[asset].path, quality, dimensions.width, dimensions.height);
+  const asUint8Array = new Uint8Array(smaller);
+  assetScope.set(quality, asUint8Array);
+  return asUint8Array;
 };
 
 export const GET = async (req: NextRequest, context: { params: Promise<{ asset: string }> }) => {
